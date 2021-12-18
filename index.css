@@ -89,16 +89,14 @@ body.active {
     font-size: 16px;
 
     transition: 0.5s;
-}
-
-.form_signin {
     background-color: #fff;
     left: 0;
     transition-delay: .25s;
+    margin-bottom: 20px;
 }
 
 
-.form-box.active .form_signin {
+.form-box.active .form {
     left: -100%;
     transition-delay: 0s
 }
@@ -108,6 +106,7 @@ body.active {
     font-size: 1.5rem;
     font-weight: 500;
     color: #333;
+    margin-top: 0;
 }
 .form__title-row{
     display: flex;
@@ -167,10 +166,22 @@ body.active {
 }
 .info__row-value {
     min-width: 150px;
-    max-width: 300px;
+    max-width: 250px;
     width: calc(100%/6);
-    white-space: nowrap;
+    text-align: justify;
+    /* white-space: nowrap; */
 }
+
+
+.table__main-row :first-child{
+    text-align: center;
+}
+
+a{
+    text-decoration: none;
+    color: #000;
+}
+
 .fm1, .fm2{
     font-size: 12px;
 }
