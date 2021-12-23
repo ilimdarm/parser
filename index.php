@@ -1,32 +1,9 @@
 <?php
-// set_time_limit(60);//may take time for downloading
-// ini_set("memory_limit", "512M");//may require more memory
+
+require_once('parse.php');
+get_data();
 
 
-$filename = "info.zip";
-
-$fp = fopen($filename, "r");
-fclose($fp);
-
-$zip = new ZipArchive;
-if (!$zip->open($filename)) exit("error");
-$currencies = array();
-foreach (explode("\n", $zip->getFromName("bm_cy.dat")) as $value) {
-  $entry = explode(";", $value);
-  $currencies[$entry[0]] = iconv("windows-1251", "utf-8", $entry[2]);
-}
-$exchangers = array();
-foreach (explode("\n", $zip->getFromName("bm_exch.dat")) as $value) {
-  $entry = explode(";", $value);
-  $exchangers[$entry[0]] = iconv("windows-1251", "utf-8", $entry[1]);
-}
-$rates = array();
-foreach (explode("\n", $zip->getFromName("bm_rates.dat")) as $value) {
-  $entry = explode(";", $value);
-  $rates[$entry[0]][$entry[1]][$entry[2]] = array("rate"=>$entry[3] / $entry[4], "reserve"=>$entry[5], "reviews"=>str_replace(".", "/", $entry[6]));
-}
-$zip->close();
-// unlink($filename);
 if (isset($_POST['from']) || isset($_POST['to'])){
     $fr = $_POST['from'];
     $ton = $_POST['to'];
@@ -37,19 +14,11 @@ else{
 }
 $from = $currencies[$fr]; 
 $to = $currencies[$ton]; 
-
-uasort($rates[$fr][$ton], function ($a, $b) {
-    if ($a["rate"] > $b["rate"]) return 1;
-    if ($a["rate"] < $b["rate"]) return -1;
-    return(0);
-});
-
-
-
 $count = 0;
 $s = 0;
 $table = '';
-foreach ($rates[$fr][$ton] as $exch_id=>$entry) {
+
+foreach($rates[$fr][$ton] as $exch_id=>$entry) {
     $row = '';
     if ($count % 2 == 1){
         $row = ' row';
@@ -71,6 +40,7 @@ foreach ($rates[$fr][$ton] as $exch_id=>$entry) {
     $s += $entry["reserve"];
 
 }
+
 
 
 ?>
@@ -98,7 +68,6 @@ foreach ($rates[$fr][$ton] as $exch_id=>$entry) {
                         <select name="from" class="form__input">
                             
                             <?php
-                                // ksort($currencies);
                                 foreach ($currencies as $cy_id=>$cy_name) 
                                     echo('<option value="'. $cy_id .'">' .$cy_name. '</option>');
                             ?>
@@ -108,7 +77,6 @@ foreach ($rates[$fr][$ton] as $exch_id=>$entry) {
                         <select name="to" class="form__input">
                            
                             <?php
-                                // ksort($currencies);
                                 foreach ($currencies as $cy_id=>$cy_name) 
                                     echo('<option value="'. $cy_id .'">' .$cy_name. '</option>');
                             ?>
