@@ -3,7 +3,7 @@
 $currencies = array();
 $exchangers = array();
 $rates = array();
-function get_data(){
+function get_data() {
 
     $filename = "info.zip";
 
@@ -26,7 +26,7 @@ function get_data(){
     }
     foreach (explode("\n", $zip->getFromName("bm_rates.dat")) as $value) {
         $entry = explode(";", $value);
-        $rates[$entry[0]][$entry[1]][$entry[2]] = array("rate"=>$entry[3] / $entry[4], "reserve"=>$entry[5], "reviews"=>str_replace(".", "/", $entry[6]));
+        $rates[$entry[0]][$entry[1]][$entry[2]] = array("rate" => $entry[3] / $entry[4], "reserve" => $entry[5], "reviews" => str_replace(".", "/", $entry[6]));
     }
     $zip->close();
 
