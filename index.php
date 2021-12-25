@@ -9,7 +9,7 @@ if (isset($_POST['from']) & isset($_POST['to'])) {
     $fr = $_POST['from'];
     $ton = $_POST['to'];
 } 
-else if (isset($_POST['from']) || isset($_POST['to'])){
+else if (!isset($_POST['from']) || !isset($_POST['to'])){
     $post_exc = 'Ошибка получения данных из формы!';
 }
 $from = $api->currencies[$fr];
@@ -103,7 +103,7 @@ if ($api->res != false){
         </form>
 
         <?php
-        if ($post_exc != ''){
+        if ($post_exc == ''){
             if($count == 0)
                 echo '<p class="total">Обменников по направлению '. $from .' - ' .$to  .' не найдено.</p>';
             else echo '<div class="form-table">
