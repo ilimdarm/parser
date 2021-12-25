@@ -72,7 +72,7 @@ if ($api->res != false){
     <div class="form-box">
 
         <form action="index.php" class="form" method="POST">
-            <h3 class="form__title">Прасинг</h3>
+            <h3 class="form__title">Парсинг</h3>
             <div class="form__title-row">
                 <?php
                     if ($api->res != false){
