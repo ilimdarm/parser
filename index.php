@@ -57,6 +57,11 @@ if ($api->res != false){
     <title>Parser</title>
     <link rel="stylesheet" href="./index.css">
     
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.js"></script>
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/js/select2.min.js"></script>
+    
     <script src="" defer></script>
 
 </head>
@@ -121,16 +126,9 @@ if ($api->res != false){
 
 </body>
 
-<link rel="stylesheet" href="https://snipp.ru/cdn/selectize.js/0.12.6/dist/css/selectize.default.css">
-
-
-<script src="https://snipp.ru/cdn/jquery/2.1.1/jquery.min.js"></script>
-<script src="https://snipp.ru/cdn/microplugin.js/src/microplugin.js"></script>
-<script src="https://snipp.ru/cdn/sifter.js/sifter.min.js"></script>
-<script src="https://snipp.ru/cdn/selectize.js/0.12.6/dist/js/selectize.min.js"></script>
 <script>
-$(document).ready(function(){
-	$('.js-selectize').selectize();
+$(document).ready(function() {
+    $('.form__input').select2();
 });
 </script>
 
