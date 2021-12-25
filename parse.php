@@ -8,19 +8,23 @@ class BestChange {
     public $exchangers = array();
     public $rates = array();
     public $res = true;
+    public $exc = '';
 
     public function __construct() {
         $this->load();
-        $this->res = $this->data();
+        $this->res = $this->data(0);
     }
 
     public function load() {
         try {
-            if (time() - filemtime($this->FILENAME) > 86400 | file_exists($this->FILENAME) == false)
+            if (file_exists($this->FILENAME) == false)
             {
-                $result = file_put_contents($this->FILENAME, fopen($this->URL, 'r'));
-                if ($result === false) {
-                    throw new Exception('Не удалось сохранить файл');
+                if (time() - filemtime($this->FILENAME) > 86400)
+                {
+                    $result = file_put_contents($this->FILENAME, fopen($this->URL, 'r'));
+                    if ($result === false) {
+                        $this->exc = 'Не удалось сохранить файл!';
+                    }
                 }
             }
             
@@ -29,12 +33,22 @@ class BestChange {
         }
         return true;
     }
-    public function data(){
+    public function data($count){
         $zip = new ZipArchive;
-        if (!$zip->open($this->FILENAME))
-            load();
+        if ($count < 3){     
+            if (!$zip->open($this->FILENAME))
+            {
+                $this->load();
+                $count++;
+                return $this->data($count);
+            }
+        }
+        else
+        {
+            return false;
+            $this->exc = 'Не удалось открыть файл!';
+        } 
         try{
-            $zip->open($this->FILENAME);
             foreach (explode("\n", $zip->getFromName("bm_cy.dat")) as $value) {
                 $entry = explode(";", $value);
                 $this->currencies[$entry[0]] = iconv("windows-1251", "utf-8", $entry[2]);
@@ -51,6 +65,7 @@ class BestChange {
             $zip->close();
         } catch (Exception $e) {
             return false;
+            $this->exc = 'Не удалось спарсить данные!';
         }
         return true;
     }

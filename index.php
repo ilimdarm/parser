@@ -3,15 +3,14 @@
 require_once('parse.php');
 
 $api = new BestChange();
+$post_exc = '';
 
-
-// get_data();
-if (isset($_POST['from']) || isset($_POST['to'])) {
+if (isset($_POST['from']) & isset($_POST['to'])) {
     $fr = $_POST['from'];
     $ton = $_POST['to'];
-} else {
-    $fr = 92;
-    $ton = 139;
+} 
+else if (isset($_POST['from']) || isset($_POST['to'])){
+    $post_exc = 'Ошибка получения данных из формы!';
 }
 $from = $api->currencies[$fr];
 $to = $api->currencies[$ton];
@@ -90,7 +89,9 @@ if ($api->res != false){
 
                         echo '</select>';
                     }
-                    else echo '<p class="total">Возникла ошибка при получении данных.</p>';
+                    else if ($api->exc != '') 
+                        echo '<p class="total">'. $aoi->exc .'</p>';
+                    else  echo '<p class="total">Возникла неизвестная ошибка.</p>';
                 ?>
                 <!-- <label class="form__input">
                     <input type = "checkbox" name = "cache" value = "check">
@@ -102,23 +103,26 @@ if ($api->res != false){
         </form>
 
         <?php
-        if($count == 0)
-            echo '<p class="total">Обменников по направлению '. $from .' - ' .$to  .' не найдено.</p>';
-        else echo '<div class="form-table">
-                <h3 class="form__title">Обменники: '. $from .' - ' .$to  .' </h3>
-                <div class="table">
-                    <div class="table__info-row table__main-row">
-                        <div class="info__row-value">Имя обменника</div>
-                        <div class="info__row-value">Курс отдаю</div>
-                        <div class="info__row-value">Курс получаю</div>
-                        <div class="info__row-value">Резерв</div>
-                        <div class="info__row-value" style="width:70px">Отзывы</div>
-                    </div>'
-            . $table
-            . '</div>
-                <p class="total">Количество обменников по направлению: ' . $count++ . '</p>
-                <p class="total">Суммарный резерв обменников: ' . $s . ' ' . $api->currencies[$ton] . '</p>
-            </div>';
+        if ($post_exc != ''){
+            if($count == 0)
+                echo '<p class="total">Обменников по направлению '. $from .' - ' .$to  .' не найдено.</p>';
+            else echo '<div class="form-table">
+                    <h3 class="form__title">Обменники: '. $from .' - ' .$to  .' </h3>
+                    <div class="table">
+                        <div class="table__info-row table__main-row">
+                            <div class="info__row-value">Имя обменника</div>
+                            <div class="info__row-value">Курс отдаю</div>
+                            <div class="info__row-value">Курс получаю</div>
+                            <div class="info__row-value">Резерв</div>
+                            <div class="info__row-value" style="width:70px">Отзывы</div>
+                        </div>'
+                . $table
+                . '</div>
+                    <p class="total">Количество обменников по направлению: ' . $count++ . '</p>
+                    <p class="total">Суммарный резерв обменников: ' . $s . ' ' . $api->currencies[$ton] . '</p>
+                </div>';
+        }
+        else echo '<p class="total">'. $post_exc .'</p>';
         ?>
     </div>
 
