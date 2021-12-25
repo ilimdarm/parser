@@ -18,30 +18,32 @@ $to = $api->currencies[$ton];
 $count = 0;
 $s = 0;
 $table = '';
-
-foreach ($api->rates[$fr][$ton] as $exch_id => $entry) {
-    $row = '';
-    if ($count % 2 == 1) {
-        $row = ' row';
+if ($api->res != false){
+    if (count($api->rates[$fr][$ton]) > 0){
+        foreach ($api->rates[$fr][$ton] as $exch_id => $entry) {
+            $row = '';
+            if ($count % 2 == 1) {
+                $row = ' row';
+            }
+            $reverse = strrev(round($entry["rate"], 0));
+            $rate = strrev(chunk_split($reverse, 3, ' '));
+            $rev2 = strrev(round(1 / $entry["rate"], 0));
+            $rate2 = strrev(chunk_split($rev2, 3, ' '));
+            $table .= '<div class="table__info-row' . $row . '">
+            <div class="info__row-value">';
+            $table .= '<a target="_blank" href="https://www.bestchange.ru/click.php?id="' . $exch_id . '>' . $api->exchangers[$exch_id] . '</a> </div>
+                <div class="info__row-value">';
+            $table .= ($entry["rate"] < 1 ? 1 : $rate) . ' ' . $api->currencies[$fr] . '</div>
+                <div class="info__row-value">';
+            $table .= ($entry["rate"] < 1 ? $rate2 : 1) . ' ' . $api->currencies[$ton] . '</div>
+                <div class="info__row-value">';
+            $table .= $entry["reserve"] . '</div>
+                <div class="info__row-value" style="width:70px">';
+            $table .= $entry["reviews"] . '</div></div>';
+            $count++;
+            $s += $entry["reserve"];
+        }
     }
-    $reverse = strrev(round($entry["rate"], 0));
-    $rate = strrev(chunk_split($reverse, 3, ' '));
-    $rev2 = strrev(round(1 / $entry["rate"], 0));
-    $rate2 = strrev(chunk_split($rev2, 3, ' '));
-    $table .= '<div class="table__info-row' . $row . '">
-    <div class="info__row-value">';
-    $table .= '<a target="_blank" href="https://www.bestchange.ru/click.php?id="' . $exch_id . '>' . $api->exchangers[$exch_id] . '</a> </div>
-        <div class="info__row-value">';
-    $table .= ($entry["rate"] < 1 ? 1 : $rate) . ' ' . $api->currencies[$fr] . '</div>
-        <div class="info__row-value">';
-    $table .= ($entry["rate"] < 1 ? $rate2 : 1) . ' ' . $api->currencies[$ton] . '</div>
-        <div class="info__row-value">';
-    $table .= $entry["reserve"] . '</div>
-        <div class="info__row-value" style="width:70px">';
-    $table .= $entry["reviews"] . '</div></div>';
-    $count++;
-    $s += $entry["reserve"];
-
 }
 
 
@@ -54,6 +56,7 @@ foreach ($api->rates[$fr][$ton] as $exch_id => $entry) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Parser</title>
     <link rel="stylesheet" href="./index.css">
+    
     <script src="" defer></script>
 
 </head>
@@ -67,24 +70,23 @@ foreach ($api->rates[$fr][$ton] as $exch_id => $entry) {
         <form action="index.php" class="form" method="POST">
             <h3 class="form__title">Прасинг</h3>
             <div class="form__title-row">
-                <select name="from" class="form__input">
-
-                    <?php
-                    foreach ($api->currencies as $cy_id => $cy_name)
-                        echo('<option value="' . $cy_id . '">' . $cy_name . '</option>');
-                    ?>
-
-                </select>
-
-                <select name="to" class="form__input">
-
-                    <?php
-                    foreach ($api->currencies as $cy_id => $cy_name)
-                        echo('<option value="' . $cy_id . '">' . $cy_name . '</option>');
-                    ?>
+                <?php
+                    if ($api->res != false){
+                        echo '<select name="from" class="form__input">';
+                        foreach ($api->currencies as $cy_id => $cy_name)
+                            echo('<option value="' . $cy_id . '">' . $cy_name . '</option>');
+                        echo '</select>                  
+               
+                    <select name="to" class="form__input">';
+                       
+                        foreach ($api->currencies as $cy_id => $cy_name)
+                            echo('<option value="' . $cy_id . '">' . $cy_name . '</option>');
 
 
-                </select>
+                        echo '</select>';
+                    }
+                    else echo '<p class="total">Возникла ошибка при получении данных.</p>';
+                ?>
                 <!-- <label class="form__input">
                     <input type = "checkbox" name = "cache" value = "check">
                     <span>Кэширование</span>
@@ -95,10 +97,10 @@ foreach ($api->rates[$fr][$ton] as $exch_id => $entry) {
         </form>
 
         <?php
-        // if(count($names) == 0)
-        // echo '<p class="total">Обменников не найдено</p>';
-        echo '<div class="form-table">
-                <h3 class="form__title">Результат</h3>
+        if($count == 0)
+            echo '<p class="total">Обменников по направлению '. $from .' - ' .$to  .' не найдено.</p>';
+        else echo '<div class="form-table">
+                <h3 class="form__title">Обменники: '. $from .' - ' .$to  .' </h3>
                 <div class="table">
                     <div class="table__info-row table__main-row">
                         <div class="info__row-value">Имя обменника</div>
@@ -110,7 +112,7 @@ foreach ($api->rates[$fr][$ton] as $exch_id => $entry) {
             . $table
             . '</div>
                 <p class="total">Количество обменников по направлению: ' . $count++ . '</p>
-                <p class="total">Суммарный резерв обменников: ' . $s . ' ' . $currencies[$ton] . '</p>
+                <p class="total">Суммарный резерв обменников: ' . $s . ' ' . $api->currencies[$ton] . '</p>
             </div>';
         ?>
     </div>
@@ -119,5 +121,17 @@ foreach ($api->rates[$fr][$ton] as $exch_id => $entry) {
 
 </body>
 
+<link rel="stylesheet" href="https://snipp.ru/cdn/selectize.js/0.12.6/dist/css/selectize.default.css">
+
+
+<script src="https://snipp.ru/cdn/jquery/2.1.1/jquery.min.js"></script>
+<script src="https://snipp.ru/cdn/microplugin.js/src/microplugin.js"></script>
+<script src="https://snipp.ru/cdn/sifter.js/sifter.min.js"></script>
+<script src="https://snipp.ru/cdn/selectize.js/0.12.6/dist/js/selectize.min.js"></script>
+<script>
+$(document).ready(function(){
+	$('.js-selectize').selectize();
+});
+</script>
 
 </html>
