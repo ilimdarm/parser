@@ -5,7 +5,7 @@ require_once('parse.php');
 $api = new BestChange();
 $post_exc = '';
 
-if (isset($_POST['from']) & isset($_POST['to'])) {
+if (isset($_POST['from']) && isset($_POST['to'])) {
     $fr = $_POST['from'];
     $ton = $_POST['to'];
 } 
@@ -55,14 +55,10 @@ if ($api->res != false){
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Parser</title>
     <link rel="stylesheet" href="./index.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/css/select2.min.css" rel="stylesheet">
     
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.js"></script>
-
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/css/select2.min.css" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/js/select2.min.js"></script>
-    
-    <script src="" defer></script>
-
 </head>
 <body>
 
@@ -78,15 +74,12 @@ if ($api->res != false){
                     if ($api->res != false){
                         echo '<select name="from" class="form__input">';
                         foreach ($api->currencies as $cy_id => $cy_name)
-                            echo('<option value="' . $cy_id . '">' . $cy_name . '</option>');
-                        echo '</select>                  
-               
+                            echo '<option value="' . $cy_id . '">' . $cy_name . '</option>';
+                        echo '</select>
                     <select name="to" class="form__input">';
                        
                         foreach ($api->currencies as $cy_id => $cy_name)
-                            echo('<option value="' . $cy_id . '">' . $cy_name . '</option>');
-
-
+                            echo '<option value="' . $cy_id . '">' . $cy_name . '</option>';
                         echo '</select>';
                     }
                     else if ($api->exc != '') 
@@ -118,7 +111,7 @@ if ($api->res != false){
                         </div>'
                 . $table
                 . '</div>
-                    <p class="total">Количество обменников по направлению: ' . $count++ . '</p>
+                    <p class="total">Количество обменников по направлению: ' . $count . '</p>
                     <p class="total">Суммарный резерв обменников: ' . $s . ' ' . $api->currencies[$ton] . '</p>
                 </div>';
         }
