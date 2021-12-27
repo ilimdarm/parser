@@ -10,39 +10,36 @@ if (isset($_POST['from']) && isset($_POST['to'])) {
     $ton = $_POST['to'];
 } 
 else if (!isset($_POST['from']) || !isset($_POST['to'])){
-    $post_exc = 'Ошибка получения данных из формы!';
+    $fr = 1;
+    $i = 0;
+    $ton = array();
+    foreach ($api->rates[$fr] as $id => $n){
+        $ton[$i] = $id;
+        $i++;
+    }
+
 }
-$from = $api->currencies[$fr];
-$to = $api->currencies[$ton];
 $count = 0;
 $s = 0;
+$from = $api->currencies[$fr];
+if (!is_array($ton))
+    $to = $api->currencies[$ton];
+else $to = 'Все направления';
 $table = '';
+
 if ($api->res != false){
-    if (count($api->rates[$fr][$ton]) > 0){
-        foreach ($api->rates[$fr][$ton] as $exch_id => $entry) {
-            $row = '';
-            if ($count % 2 == 1) {
-                $row = ' row';
+    if (!is_array($ton)){
+        if (array_key_exists($fr, $api->currencies) && array_key_exists($ton, $api->currencies)){
+            if (count($api->rates[$fr][$ton]) > 0){
+                get_data($api, $fr, $ton);
             }
-            $reverse = strrev(round($entry["rate"], 0));
-            $rate = strrev(chunk_split($reverse, 3, ' '));
-            $rev2 = strrev(round(1 / $entry["rate"], 0));
-            $rate2 = strrev(chunk_split($rev2, 3, ' '));
-            $table .= '<div class="table__info-row' . $row . '">
-            <div class="info__row-value">';
-            $table .= '<a target="_blank" href="https://www.bestchange.ru/click.php?id="' . $exch_id . '>' . $api->exchangers[$exch_id] . '</a> </div>
-                <div class="info__row-value">';
-            $table .= ($entry["rate"] < 1 ? 1 : $rate) . ' ' . $api->currencies[$fr] . '</div>
-                <div class="info__row-value">';
-            $table .= ($entry["rate"] < 1 ? $rate2 : 1) . ' ' . $api->currencies[$ton] . '</div>
-                <div class="info__row-value">';
-            $table .= $entry["reserve"] . '</div>
-                <div class="info__row-value" style="width:70px">';
-            $table .= $entry["reviews"] . '</div></div>';
-            $count++;
-            $s += $entry["reserve"];
         }
+        else $post_exc = 'Ошибка! Валюты с таким Ид не существует';
     }
+    else
+        for ($i = 0; $i < count($ton); $i++){
+            get_data($api, $fr, $ton[$i]);
+        }
 }
 
 
@@ -98,22 +95,30 @@ if ($api->res != false){
         <?php
         if ($post_exc == ''){
             if($count == 0)
-                echo '<p class="total">Обменников по направлению '. $from .' - ' .$to  .' не найдено.</p>';
-            else echo '<div class="form-table">
-                    <h3 class="form__title">Обменники: '. $from .' - ' .$to  .' </h3>
-                    <div class="table">
-                        <div class="table__info-row table__main-row">
-                            <div class="info__row-value">Имя обменника</div>
-                            <div class="info__row-value">Курс отдаю</div>
-                            <div class="info__row-value">Курс получаю</div>
-                            <div class="info__row-value">Резерв</div>
-                            <div class="info__row-value" style="width:70px">Отзывы</div>
-                        </div>'
-                . $table
-                . '</div>
-                    <p class="total">Количество обменников по направлению: ' . $count . '</p>
-                    <p class="total">Суммарный резерв обменников: ' . $s . ' ' . $api->currencies[$ton] . '</p>
-                </div>';
+                {
+                    echo $post_exc;
+                    echo '<p class="total">Обменников по направлению '. $from .' - ' .$to  .' не найдено.</p>';
+                }    
+            else {
+                echo '<div class="form-table">
+                        <h3 class="form__title">Обменники: '. $from .' - ' .$to  .' </h3>
+                        <div class="table">
+                            <div class="table__info-row table__main-row">
+                                <div class="info__row-value">Имя обменника</div>
+                                <div class="info__row-value">Курс отдаю</div>
+                                <div class="info__row-value">Курс получаю</div>
+                                <div class="info__row-value">Резерв</div>
+                                <div class="info__row-value" style="width:70px">Отзывы</div>
+                            </div>'
+                    . $table
+                    . '</div>
+                        <p class="total">Количество обменников по направлению: ' . $count . '</p>';
+                        // if (!is_array($ton))
+                        !is_array($ton)?'<p class="total">Суммарный резерв обменников: ' . $s . ' ' . $api->currencies[$ton] . '</p></div>':'</div>';
+                    // echo '</div>';
+                    
+                
+            }
         }
         else echo '<p class="total">'. $post_exc .'</p>';
         ?>
@@ -126,6 +131,15 @@ if ($api->res != false){
 <script>
 $(document).ready(function() {
     $('.form__input').select2();
+    <?php
+        if (array_key_exists($fr, $api->currencies) && array_key_exists($ton, $api->currencies)){?>
+            $('.select2-selection__rendered:first').text("<?=$from?>");
+            $('.select2-selection__rendered:last').text("<?=$to?>");
+            <?php }  
+            else{ ?>
+            $('.select2-selection__rendered:first').text("<?=$api->currencies[168]?>");
+            $('.select2-selection__rendered:last').text("<?=$api->currencies[168]?>");
+        <?php } ?>
 });
 </script>
 

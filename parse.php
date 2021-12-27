@@ -7,7 +7,7 @@ class BestChange {
     public $currencies = array();
     public $exchangers = array();
     public $rates = array();
-    public $res = true;
+    public $res = false;
     public $exc = '';
 
     public function __construct() {
@@ -77,6 +77,35 @@ class BestChange {
             return false;
         }
         return true;
+    }
+}
+
+function get_data($api, $fr, $ton){
+    global $count;
+    global $s;
+    global $table;
+    foreach ($api->rates[$fr][$ton] as $exch_id => $entry) {
+        $row = '';
+        if ($count % 2 == 1) {
+            $row = ' row';
+        }
+        $reverse = strrev(round($entry["rate"], 0));
+        $rate = strrev(chunk_split($reverse, 3, ' '));
+        $rev2 = strrev(round(1 / $entry["rate"], 0));
+        $rate2 = strrev(chunk_split($rev2, 3, ' '));
+        $table .= '<div class="table__info-row' . $row . '">
+        <div class="info__row-value">';
+        $table .= '<a target="_blank" href="https://www.bestchange.ru/click.php?id=' . $exch_id . '">' . $api->exchangers[$exch_id] . '</a> </div>
+            <div class="info__row-value">';
+        $table .= ($entry["rate"] < 1 ? 1 : $rate) . ' ' . $api->currencies[$fr] . '</div>
+            <div class="info__row-value">';
+        $table .= ($entry["rate"] < 1 ? $rate2 : 1) . ' ' . $api->currencies[$ton] . '</div>
+            <div class="info__row-value">';
+        $table .= $entry["reserve"] . '</div>
+            <div class="info__row-value" style="width:70px">';
+        $table .= $entry["reviews"] . '</div></div>';
+        $count++;
+        $s += $entry["reserve"];
     }
 }
 
