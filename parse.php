@@ -9,6 +9,11 @@ class BestChange {
     public $rates = array();
     public $res = false;
     public $exc = '';
+    
+    public $file_currencies = 'bm_cy.dat';
+    public $file_exchangers = 'bm_exch.dat';
+    public $file_rates = 'bm_rates.dat';
+    public $file_cities = 'bm_cities.dat';
 
     public function __construct() {
         $this->load();
@@ -19,13 +24,13 @@ class BestChange {
         try {
             if (file_exists($this->FILENAME) == false)
             {
-                if (!save())
+                if (!$this->save())
                     return false;
             }
             else{
                 if (time() - filemtime($this->FILENAME) > 86400)
                 {
-                    if (!save())
+                    if (!$this->save())
                         return false;
                 }
             }
@@ -77,6 +82,16 @@ class BestChange {
             return false;
         }
         return true;
+    }
+
+    public function currencies(){
+        return $this->currencies;
+    }
+    public function exchangers(){
+        return $this->exchangers;
+    }
+    public function rates(){
+        return $this->rates;
     }
 }
 
