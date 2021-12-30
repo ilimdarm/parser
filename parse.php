@@ -37,7 +37,9 @@ class Rates{
                 $data = array_merge($data, $val);
             }
         }
-        return asort($data, SORT_STRING); // ?
+        uasort($this->data, function($a, $b) {
+            return $a['rate'] <=> $b['rate'];
+        });
     }
 
 }
@@ -56,12 +58,6 @@ class Common{
         if ($only_name) return $this->data[$id]['name'];
         else return $this->data[$id];
     }
-    // public function search_by_name($name){
-        
-    //     foreach($this->data as $val=>$entry){
-
-    //     }
-    // }
 }
 
 class Currencies extends Common{
@@ -191,19 +187,19 @@ class BestChange {
             return false;
         } 
         try{
-            if (!$zip->locateName($this->file_rates)){
+            if (is_int($zip->locateName($this->file_rates))){
                 $text = iconv("windows-1251", "utf-8", $zip->getFromName($this->file_rates));
                 $this->rates = new Rates( $text, $this->split_reviews);
             }
-            if ($zip->locateName($this->file_currencies)){
+            if (is_int($zip->locateName($this->file_currencies))){
                 $text = iconv("windows-1251", "utf-8", $zip->getFromName($this->file_currencies));
                 $this->currencies = new Currencies($text);
             }
-            if ($zip->locateName($this->file_exchangers)){
+            if (is_int($zip->locateName($this->file_exchangers))){
                 $text = iconv("windows-1251", "utf-8", $zip->getFromName($this->file_exchangers));
                 $this->exchangers = new Exchangers($text);
             }
-            if (!$zip->locateName($this->file_cities)){
+            if (is_int($zip->locateName($this->file_cities))){
                 $text = iconv("windows-1251", "utf-8", $zip->getFromName($this->file_cities));
                 $this->cities = new Cities($text);
             }
