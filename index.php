@@ -2,10 +2,13 @@
 
 require_once('parse.php');
 
-$api = new BestChange();
+$api = new BestChange($cache_seconds=3600, $exchangers_reviews=true, $split_reviews=true);
 $post_exc = '';
 
-if (isset($_POST['from']) && isset($_POST['to'])) {
+$currencies = $api->currencies()->get();
+$exchangers = $api->exchangers()->get();
+$rates = $api->rates()->get();
+if (isset($_POST['from']) && isset($_POST['to'])) { 
     $fr = $_POST['from'];
     $ton = $_POST['to'];
 } 
@@ -13,32 +16,32 @@ else if (!isset($_POST['from']) || !isset($_POST['to'])){
     $fr = 1;
     $i = 0;
     $ton = array();
-    foreach ($api->rates[$fr] as $id => $n){
+    foreach ($rates[$fr] as $id => $n){
         $ton[$i] = $id;
         $i++;
     }
-
 }
+
 $count = 0;
 $s = 0;
-$from = $api->currencies[$fr];
+$from = $currencies[$fr]['name'];
 if (!is_array($ton))
-    $to = $api->currencies[$ton];
+    $to = $currencies[$ton]['name'];    
 else $to = 'Все направления';
 $table = '';
 
 if ($api->res != false){
     if (!is_array($ton)){
-        if (array_key_exists($fr, $api->currencies) && array_key_exists($ton, $api->currencies)){
-            if (count($api->rates[$fr][$ton]) > 0){
-                get_data($api, $fr, $ton);
+        if (array_key_exists($fr, $currencies) && array_key_exists($ton, $currencies)){
+            if (count($rates[$fr][$ton]) > 0){
+                get_data($rates, $currencies, $exchangers, $fr, $ton);
             }
         }
         else $post_exc = 'Ошибка! Валюты с таким Ид не существует';
     }
     else
         for ($i = 0; $i < count($ton); $i++){
-            get_data($api, $fr, $ton[$i]);
+            get_data($rates, $currencies, $exchangers, $fr, $ton[$i]);
         }
 }
 
@@ -70,13 +73,13 @@ if ($api->res != false){
                 <?php
                     if ($api->res != false){
                         echo '<select name="from" class="form__input">';
-                        foreach ($api->currencies as $cy_id => $cy_name)
-                            echo '<option value="' . $cy_id . '">' . $cy_name . '</option>';
+                        foreach ($currencies as $cy_id => $cy_name)
+                            echo '<option value="' . $cy_id . '">' . $cy_name['name'] . '</option>';
                         echo '</select>
                     <select name="to" class="form__input">';
                        
-                        foreach ($api->currencies as $cy_id => $cy_name)
-                            echo '<option value="' . $cy_id . '">' . $cy_name . '</option>';
+                        foreach ($currencies as $cy_id => $cy_name)
+                            echo '<option value="' . $cy_id . '">' . $cy_name['name'] . '</option>';
                         echo '</select>';
                     }
                     else if ($api->exc != '') 
@@ -104,7 +107,7 @@ if ($api->res != false){
                         <h3 class="form__title">Обменники: '. $from .' - ' .$to  .' </h3>
                         <div class="table">
                             <div class="table__info-row table__main-row">
-                                <div class="info__row-value">Имя обменника</div>
+                                <div class="info__row-value">Имя обменника</div> 
                                 <div class="info__row-value">Курс отдаю</div>
                                 <div class="info__row-value">Курс получаю</div>
                                 <div class="info__row-value">Резерв</div>
@@ -113,9 +116,9 @@ if ($api->res != false){
                     . $table
                     . '</div>
                         <p class="total">Количество обменников по направлению: ' . $count . '</p>';
-                        // if (!is_array($ton))
-                        !is_array($ton)?'<p class="total">Суммарный резерв обменников: ' . $s . ' ' . $api->currencies[$ton] . '</p></div>':'</div>';
-                    // echo '</div>';
+                        if (!is_array($ton))
+                        echo '<p class="total">Суммарный резерв обменников: ' . $s . ' ' . $currencies[$ton]['name'] . '</p></div>';
+                    else echo '</div>';
                     
                 
             }
@@ -132,13 +135,18 @@ if ($api->res != false){
 $(document).ready(function() {
     $('.form__input').select2();
     <?php
-        if (array_key_exists($fr, $api->currencies) && array_key_exists($ton, $api->currencies)){?>
+    if (isset($fr) && isset($ton) && !is_array($ton)){
+        if (array_key_exists($fr, $currencies) && array_key_exists($ton, $currencies)){?>
             $('.select2-selection__rendered:first').text("<?=$from?>");
             $('.select2-selection__rendered:last').text("<?=$to?>");
+            $('.form__input:first').val("<?=$fr?>");
+            $('.form__input:last').val("<?=$ton?>");
             <?php }  
+        }
             else{ ?>
-            $('.select2-selection__rendered:first').text("<?=$api->currencies[168]?>");
-            $('.select2-selection__rendered:last').text("<?=$api->currencies[168]?>");
+            $('.select2-selection__rendered:first').text("<?=$currencies[168]['name']?>");
+            $('.select2-selection__rendered:last').text("<?=$currencies[168]['name']?>");
+            $('.form__input').val("<?=168?>");
         <?php } ?>
 });
 </script>

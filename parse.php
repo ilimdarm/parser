@@ -1,5 +1,126 @@
 <?php
 
+class Rates{
+    public $data = array();
+
+    public function __construct($text, $split_reviews) {
+        foreach (explode("\n", $text) as $value) {
+            $entry = explode(";", $value);
+            try{
+                if ($split_reviews) $t =  explode(".", $entry[6]);  else $t = $entry[6];
+                $this->data[$entry[0]][$entry[1]][$entry[2]] = array(
+                    'give_id' =>  $value[0],
+                    'get_id' =>  $entry[1],
+                    'exchange_id' =>  $entry[2],
+                    'rate' =>  (float)$entry[3] / ((float)$entry[4]),
+                    'reserve' =>  $entry[5],
+                    'reviews' => $t,
+                    'min_sum' =>  $entry[8],
+                    'max_sum' =>  $entry[9],
+                    'city_id' =>  $entry[10]
+                );
+            }
+            catch (DivisionByZeroError $e){
+                echo "Divide by zero, I don't fear you!".PHP_EOL;
+            }
+        }
+    }
+    public function get(){
+        return $this->data;
+    }
+    public function filter($give_id, $get_id){
+        $data = array();
+        foreach($this->data as $val){
+            if ($val['give_id'] == $give_id && $val['get_id'] == $get_id){
+                if ($val['rate'] < 1) $val['give'] = 1; else  $val['give'] = $val['rate'];
+                if ($val['rate'] < 1) $val['get'] = 1 / $val['rate']; else  $val['get'] = 1;
+                $data = array_merge($data, $val);
+            }
+        }
+        return asort($data, SORT_STRING); // ?
+    }
+
+}
+
+class Common{
+    public function __construct(){
+        $this->data = array();
+    }
+    public function get(){
+        return $this->data;
+    }
+    public function get_by_id($id, $only_name = true){
+        if (!array_key_exists($id, $this->data))
+            return false;
+
+        if ($only_name) return $this->data[$id]['name'];
+        else return $this->data[$id];
+    }
+    // public function search_by_name($name){
+        
+    //     foreach($this->data as $val=>$entry){
+
+    //     }
+    // }
+}
+
+class Currencies extends Common{
+    public function __construct($text){
+        parent::__construct();
+        foreach (explode("\n", $text) as $row){
+            $val = explode(";", $row);
+            $this->data[$val[0]] = array(
+                'id' => $val[0],
+                'pos_id' => $val[1],
+                'name' => $val[2]
+            );
+        }
+        uasort($this->data, function($a, $b) {
+            return $a['name'] <=> $b['name'];
+           });
+    } 
+}
+
+class Exchangers extends Common{
+    public function __construct($text){
+        parent::__construct();
+        foreach (explode("\n", $text) as $row){
+            $val = explode(";", $row);
+            $this->data[$val[0]] = array(
+                'id' => $val[0],
+                'name' => $val[1],
+                'wmbl' => $val[3], 
+                'reserve_sum' => $val[4]
+            );
+        }
+        uasort($this->data, function($a, $b) {
+            return $a['name'] <=> $b['name'];
+        });
+    }
+    public function extract_reviews($rates){
+        foreach ($rates as $k=>$v){
+            if (array_key_exists($k, $this->data)){
+                $this->data = $v[0]['reviews'];
+            }
+        }
+    }
+}
+
+
+class Cities extends Common{
+    public function __construct($text){
+        parent::__construct();
+        foreach (explode("\n", $text) as $row){
+            $val = explode(";", $row);
+            $this->data[$val[0]] = array(
+                'id' => $val[0],
+                'name' => $val[1]
+            );
+        }
+        asort($this->data, SORT_STRING);
+    }
+}
+
 class BestChange {
     private $URL = 'http://api.bestchange.ru/info.zip';
     private $FILENAME = 'info.zip';
@@ -7,17 +128,26 @@ class BestChange {
     public $currencies = array();
     public $exchangers = array();
     public $rates = array();
+    public $cities = array();
     public $res = false;
     public $exc = '';
     
     public $file_currencies = 'bm_cy.dat';
     public $file_exchangers = 'bm_exch.dat';
-    public $file_rates = 'bm_rates.dat';
+    public $file_rates = "bm_rates.dat";
     public $file_cities = 'bm_cities.dat';
 
-    public function __construct() {
-        $this->load();
-        $this->res = $this->data(0);
+    public function __construct($load = true,  $cache=true, $cache_seconds=15, $cache_path='./', $exchangers_reviews=false,
+    $split_reviews=false) {
+        $this->cache = $cache;
+        $this->cache_seconds = $cache_seconds;
+        $this->cache_path = $cache_path  .$this->FILENAME;
+        $this->exchangers_reviews = $exchangers_reviews;
+        $this->split_reviews = $split_reviews;
+        if ($load){
+            $this->load();
+            $this->res = $this->data(0);
+        }
     }
 
     public function load() {
@@ -34,12 +164,10 @@ class BestChange {
                         return false;
                 }
             }
-            
         } catch (Exception $e) {
             $this->exc = 'Не удалось загрузить файл!';
             return false;
         }
-        return true;
     }
     public function save(){
         $result = file_put_contents($this->FILENAME, fopen($this->URL, 'r'));
@@ -63,19 +191,24 @@ class BestChange {
             return false;
         } 
         try{
-            foreach (explode("\n", $zip->getFromName("bm_cy.dat")) as $value) {
-                $entry = explode(";", $value);
-                $this->currencies[$entry[0]] = iconv("windows-1251", "utf-8", $entry[2]);
+            if (!$zip->locateName($this->file_rates)){
+                $text = iconv("windows-1251", "utf-8", $zip->getFromName($this->file_rates));
+                $this->rates = new Rates( $text, $this->split_reviews);
             }
-            asort($this->currencies, SORT_STRING);
-            foreach (explode("\n", $zip->getFromName("bm_exch.dat")) as $value) {
-                $entry = explode(";", $value);
-                $this->exchangers[$entry[0]] = iconv("windows-1251", "utf-8", $entry[1]);
+            if ($zip->locateName($this->file_currencies)){
+                $text = iconv("windows-1251", "utf-8", $zip->getFromName($this->file_currencies));
+                $this->currencies = new Currencies($text);
             }
-            foreach (explode("\n", $zip->getFromName("bm_rates.dat")) as $value) {
-                $entry = explode(";", $value);
-                $this->rates[$entry[0]][$entry[1]][$entry[2]] = array("rate" => $entry[3] / $entry[4], "reserve" => $entry[5], "reviews" => str_replace(".", "/", $entry[6]));
+            if ($zip->locateName($this->file_exchangers)){
+                $text = iconv("windows-1251", "utf-8", $zip->getFromName($this->file_exchangers));
+                $this->exchangers = new Exchangers($text);
             }
+            if (!$zip->locateName($this->file_cities)){
+                $text = iconv("windows-1251", "utf-8", $zip->getFromName($this->file_cities));
+                $this->cities = new Cities($text);
+            }
+            
+            
             $zip->close();
         } catch (Exception $e) {
             $this->exc = 'Не удалось спарсить данные!';
@@ -93,13 +226,16 @@ class BestChange {
     public function rates(){
         return $this->rates;
     }
+    public function cities(){
+        return $this->cities;
+    }
 }
 
-function get_data($api, $fr, $ton){
+function get_data($rates, $currencies, $exchangers, $fr, $ton){
     global $count;
     global $s;
     global $table;
-    foreach ($api->rates[$fr][$ton] as $exch_id => $entry) {
+    foreach ($rates[$fr][$ton] as $exch_id => $entry) {
         $row = '';
         if ($count % 2 == 1) {
             $row = ' row';
@@ -110,15 +246,15 @@ function get_data($api, $fr, $ton){
         $rate2 = strrev(chunk_split($rev2, 3, ' '));
         $table .= '<div class="table__info-row' . $row . '">
         <div class="info__row-value">';
-        $table .= '<a target="_blank" href="https://www.bestchange.ru/click.php?id=' . $exch_id . '">' . $api->exchangers[$exch_id] . '</a> </div>
+        $table .= '<a target="_blank" href="https://www.bestchange.ru/click.php?id=' . $exchangers[$exch_id]['id'] . '">' . $exchangers[$exch_id]['name'] . '</a> </div>
             <div class="info__row-value">';
-        $table .= ($entry["rate"] < 1 ? 1 : $rate) . ' ' . $api->currencies[$fr] . '</div>
+        $table .= ($entry["rate"] < 1 ? 1 : $rate) . ' ' . $currencies[$fr]['name'] . '</div>
             <div class="info__row-value">';
-        $table .= ($entry["rate"] < 1 ? $rate2 : 1) . ' ' . $api->currencies[$ton] . '</div>
+        $table .= ($entry["rate"] < 1 ? $rate2 : 1) . ' ' . $currencies[$ton]['name'] . '</div>
             <div class="info__row-value">';
         $table .= $entry["reserve"] . '</div>
             <div class="info__row-value" style="width:70px">';
-        $table .= $entry["reviews"] . '</div></div>';
+        $table .= str_replace('.', '/', $entry["reviews"]) . '</div></div>';
         $count++;
         $s += $entry["reserve"];
     }
