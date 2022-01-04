@@ -7,14 +7,13 @@ class Rates{
         foreach (explode("\n", $text) as $value) {
             $entry = explode(";", $value);
             try{
-                if ($split_reviews) $t =  explode(".", $entry[6]);  else $t = $entry[6];
                 $this->data[$entry[0]][$entry[1]][$entry[2]] = array(
                     'give_id' =>  $value[0],
                     'get_id' =>  $entry[1],
                     'exchange_id' =>  $entry[2],
-                    'rate' =>  (float)$entry[3] / ((float)$entry[4]),
+                    'rate' =>  (float)$entry[3] / (float)$entry[4],
                     'reserve' =>  $entry[5],
-                    'reviews' => $t,
+                    'reviews' => ($split_reviews)?explode(".", $entry[6]):$entry[6],
                     'min_sum' =>  $entry[8],
                     'max_sum' =>  $entry[9],
                     'city_id' =>  $entry[10]
@@ -107,12 +106,9 @@ class BestChange {
     public $file_rates = "bm_rates.dat";
     public $file_cities = 'bm_cities.dat';
 
-    public function __construct($load = true,  $cache=true, $cache_seconds=15, $cache_path='./', $exchangers_reviews=false,
-    $split_reviews=false) {
+    public function __construct($load = true,  $cache=true, $cache_seconds = 300, $split_reviews=false) {
         $this->cache = $cache;
         $this->cache_seconds = $cache_seconds;
-        $this->cache_path = $cache_path  .$this->FILENAME;
-        $this->exchangers_reviews = $exchangers_reviews;
         $this->split_reviews = $split_reviews;
         if ($load){
             $this->load();
@@ -128,7 +124,7 @@ class BestChange {
                     return false;
             }
             else{
-                if (time() - filemtime($this->FILENAME) > 86400)
+                if (time() - filemtime($this->FILENAME) > $this->cache_seconds)
                 {
                     if (!$this->save())
                         return false;
@@ -170,15 +166,15 @@ class BestChange {
                 $text = iconv("windows-1251", "utf-8", $zip->getFromName($this->file_rates));
                 $this->rates = new Rates( $text, $this->split_reviews);
             }
-            if ($zip->locateName($this->file_currencies)  !== false){
+            if ($zip->locateName($this->file_currencies)!== false){
                 $text = iconv("windows-1251", "utf-8", $zip->getFromName($this->file_currencies));
                 $this->currencies = new Currencies($text);
             }
-            if ($zip->locateName($this->file_exchangers)  !== false){
+            if ($zip->locateName($this->file_exchangers) !== false){
                 $text = iconv("windows-1251", "utf-8", $zip->getFromName($this->file_exchangers));
                 $this->exchangers = new Exchangers($text);
             }
-            if ($zip->locateName($this->file_cities)  !== false){
+            if ($zip->locateName($this->file_cities) !== false){
                 $text = iconv("windows-1251", "utf-8", $zip->getFromName($this->file_cities));
                 $this->cities = new Cities($text);
             }
@@ -206,33 +202,38 @@ class BestChange {
     }
 }
 
-function get_data($rates, $currencies, $exchangers, $fr, $ton){
-    global $count;
-    global $s;
-    global $table;
-    foreach ($rates[$fr][$ton] as $exch_id => $entry) {
-        $row = '';
-        if ($count % 2 == 1) {
-            $row = ' row';
+class Info{
+    public $table = '';
+    public $count = 0;
+    public $s = 0;
+
+    public function get_data($rates, $currencies, $exchangers, $fr, $ton){
+        foreach ($rates[$fr][$ton] as $exch_id => $entry) {
+            $row = '';
+            if ($this->count % 2 == 1) {
+                $row = ' row';
+            }
+            $reverse = strrev(round($entry["rate"], 0));
+            $rate = strrev(chunk_split($reverse, 3, ' '));
+            $rev2 = strrev(round(1 / $entry["rate"], 0));
+            $rate2 = strrev(chunk_split($rev2, 3, ' '));
+            $this->table .= '<div class="table__info-row' . $row . '">
+            <div class="info__row-value">';
+            $this->table .= '<a target="_blank" href="https://www.bestchange.ru/click.php?id=' . $exchangers[$exch_id]['id'] . '">' . $exchangers[$exch_id]['name'] . '</a> </div>
+                <div class="info__row-value">';
+            $this->table .= ($entry["rate"] < 1 ? 1 : $rate) . ' ' . $currencies[$fr]['name'] . '</div>
+                <div class="info__row-value">';
+            $this->table .= ($entry["rate"] < 1 ? $rate2 : 1) . ' ' . $currencies[$ton]['name'] . '</div>
+                <div class="info__row-value">';
+            $this->table .= $entry["reserve"] . '</div>
+                <div class="info__row-value" style="width:70px">';
+            $this->table .= str_replace('.', '/', $entry["reviews"]) . '</div></div>';
+            $this->count++;
+            $this->s += $entry["reserve"];
         }
-        $reverse = strrev(round($entry["rate"], 0));
-        $rate = strrev(chunk_split($reverse, 3, ' '));
-        $rev2 = strrev(round(1 / $entry["rate"], 0));
-        $rate2 = strrev(chunk_split($rev2, 3, ' '));
-        $table .= '<div class="table__info-row' . $row . '">
-        <div class="info__row-value">';
-        $table .= '<a target="_blank" href="https://www.bestchange.ru/click.php?id=' . $exchangers[$exch_id]['id'] . '">' . $exchangers[$exch_id]['name'] . '</a> </div>
-            <div class="info__row-value">';
-        $table .= ($entry["rate"] < 1 ? 1 : $rate) . ' ' . $currencies[$fr]['name'] . '</div>
-            <div class="info__row-value">';
-        $table .= ($entry["rate"] < 1 ? $rate2 : 1) . ' ' . $currencies[$ton]['name'] . '</div>
-            <div class="info__row-value">';
-        $table .= $entry["reserve"] . '</div>
-            <div class="info__row-value" style="width:70px">';
-        $table .= str_replace('.', '/', $entry["reviews"]) . '</div></div>';
-        $count++;
-        $s += $entry["reserve"];
     }
+
 }
+
 
 ?>
