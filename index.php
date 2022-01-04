@@ -4,7 +4,7 @@ require_once('parse.php');
 
 $api = new BestChange($cache_seconds=3600, $exchangers_reviews=true, $split_reviews=true);
 $post_exc = '';
-
+if (!$api->res){
 $currencies = $api->currencies()->get();
 $exchangers = $api->exchangers()->get();
 $rates = $api->rates()->get();
@@ -44,6 +44,7 @@ if ($api->res != false){
             get_data($rates, $currencies, $exchangers, $fr, $ton[$i]);
         }
 }
+}
 
 
 ?>
@@ -71,7 +72,7 @@ if ($api->res != false){
             <h3 class="form__title">Парсинг</h3>
             <div class="form__title-row">
                 <?php
-                    if ($api->res != false){
+                    if (!$api->res){
                         echo '<select name="from" class="form__input">';
                         foreach ($currencies as $cy_id => $cy_name)
                             echo '<option value="' . $cy_id . '">' . $cy_name['name'] . '</option>';

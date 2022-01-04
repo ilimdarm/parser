@@ -21,25 +21,11 @@ class Rates{
                 );
             }
             catch (DivisionByZeroError $e){
-                echo "Divide by zero, I don't fear you!".PHP_EOL;
             }
         }
     }
     public function get(){
         return $this->data;
-    }
-    public function filter($give_id, $get_id){
-        $data = array();
-        foreach($this->data as $val){
-            if ($val['give_id'] == $give_id && $val['get_id'] == $get_id){
-                if ($val['rate'] < 1) $val['give'] = 1; else  $val['give'] = $val['rate'];
-                if ($val['rate'] < 1) $val['get'] = 1 / $val['rate']; else  $val['get'] = 1;
-                $data = array_merge($data, $val);
-            }
-        }
-        uasort($this->data, function($a, $b) {
-            return $a['rate'] <=> $b['rate'];
-        });
     }
 
 }
@@ -50,13 +36,6 @@ class Common{
     }
     public function get(){
         return $this->data;
-    }
-    public function get_by_id($id, $only_name = true){
-        if (!array_key_exists($id, $this->data))
-            return false;
-
-        if ($only_name) return $this->data[$id]['name'];
-        else return $this->data[$id];
     }
 }
 
@@ -93,13 +72,6 @@ class Exchangers extends Common{
             return $a['name'] <=> $b['name'];
         });
     }
-    public function extract_reviews($rates){
-        foreach ($rates as $k=>$v){
-            if (array_key_exists($k, $this->data)){
-                $this->data = $v[0]['reviews'];
-            }
-        }
-    }
 }
 
 
@@ -113,7 +85,9 @@ class Cities extends Common{
                 'name' => $val[1]
             );
         }
-        asort($this->data, SORT_STRING);
+        uasort($this->data, function($a, $b) {
+            return $a['name'] <=> $b['name'];
+        });
     }
 }
 
@@ -166,9 +140,14 @@ class BestChange {
         }
     }
     public function save(){
-        $result = file_put_contents($this->FILENAME, fopen($this->URL, 'r'));
-        if ($result === false) {
-            $this->exc = 'Не удалось сохранить файл!';
+        try{
+            $result = file_put_contents($this->FILENAME, fopen($this->URL, 'r'));
+            if ($result === false) {
+                $this->exc = 'Не удалось сохранить файл!';
+                return false;
+            }
+        } catch (Exception $e) {
+            $this->exc = 'Не удалось загрузить файл!';
             return false;
         }
     }
@@ -187,19 +166,19 @@ class BestChange {
             return false;
         } 
         try{
-            if (is_int($zip->locateName($this->file_rates))){
+            if ($zip->locateName($this->file_rates) !== false){
                 $text = iconv("windows-1251", "utf-8", $zip->getFromName($this->file_rates));
                 $this->rates = new Rates( $text, $this->split_reviews);
             }
-            if (is_int($zip->locateName($this->file_currencies))){
+            if ($zip->locateName($this->file_currencies)  !== false){
                 $text = iconv("windows-1251", "utf-8", $zip->getFromName($this->file_currencies));
                 $this->currencies = new Currencies($text);
             }
-            if (is_int($zip->locateName($this->file_exchangers))){
+            if ($zip->locateName($this->file_exchangers)  !== false){
                 $text = iconv("windows-1251", "utf-8", $zip->getFromName($this->file_exchangers));
                 $this->exchangers = new Exchangers($text);
             }
-            if (is_int($zip->locateName($this->file_cities))){
+            if ($zip->locateName($this->file_cities)  !== false){
                 $text = iconv("windows-1251", "utf-8", $zip->getFromName($this->file_cities));
                 $this->cities = new Cities($text);
             }
