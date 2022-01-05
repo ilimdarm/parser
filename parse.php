@@ -208,6 +208,10 @@ class Info{
     public $s = 0;
 
     public function get_data($rates, $currencies, $exchangers, $fr, $ton){
+        
+        uasort($rates[$fr][$ton], function($a, $b) {
+            return $b['rate'] <=> $a['rate'];
+        });
         foreach ($rates[$fr][$ton] as $exch_id => $entry) {
             $row = '';
             if ($this->count % 2 == 1) {
