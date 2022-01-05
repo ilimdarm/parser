@@ -210,7 +210,7 @@ class Info{
     public function get_data($rates, $currencies, $exchangers, $fr, $ton){
         
         uasort($rates[$fr][$ton], function($a, $b) {
-            return $b['rate'] <=> $a['rate'];
+            return $a['rate'] <=> $b['rate'];
         });
         foreach ($rates[$fr][$ton] as $exch_id => $entry) {
             $row = '';
